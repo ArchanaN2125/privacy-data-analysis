@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZeroShare | University Privacy Platform</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <!-- Ionicons for icons -->
+    <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+</head>
+
+<body>
+
+    <!-- LOGIN OVERLAY -->
+    <div id="login-overlay" class="login-overlay">
+        <div class="login-card">
+            <div class="brand">
+                <span>ZeroShare</span>
+            </div>
+            <h2>University Access Portal</h2>
+            <p>Authorized Personnel Only. All activities are audited.</p>
+
+            <div class="input-group">
+                <label>University ID</label>
+                <input type="text" id="login-user" placeholder="Enter Admin ID" value="admin">
+            </div>
+            <div class="input-group">
+                <label>Access Key</label>
+                <input type="password" id="login-pass" placeholder="Enter Secure Passphrase">
+            </div>
+
+            <button id="btn-login" class="btn btn-primary">
+                <ion-icon name="log-in-outline"></ion-icon> Verify Credentials
+            </button>
+            <p class="login-hint" style="display:none">Configuration: <b>standard</b> / <b>secure</b></p>
+            <div id="login-error" class="error-msg hidden">Access Denied. Invalid Credentials.</div>
+        </div>
+    </div>
+
+    <!-- MAIN DASHBOARD (Hidden until logged in) -->
+    <div id="app-dashboard" class="app-container hidden">
+
+        <!-- SIDEBAR NAVIGATION -->
+        <aside class="sidebar">
+            <div class="brand-small">
+                <span>ZeroShare</span>
+            </div>
+
+            <nav>
+                <button class="nav-btn active" data-target="section-analysis">
+                    <ion-icon name="analytics-outline"></ion-icon> Data Analysis
+                </button>
+                <button class="nav-btn" data-target="section-integrity">
+                    <ion-icon name="document-lock-outline"></ion-icon> Document Integrity
+                </button>
+                <button class="nav-btn" data-target="section-verify">
+                    <ion-icon name="checkmark-done-circle-outline"></ion-icon> Verify Proof
+                </button>
+                <button class="nav-btn" data-target="section-audit">
+                    <ion-icon name="list-outline"></ion-icon> Audit Log
+                </button>
+            </nav>
+
+            <div class="user-badge">
+                <ion-icon name="person-circle-outline"></ion-icon>
+                <div class="user-info">
+                    <span class="u-name">Admin User</span>
+                    <span class="u-role">Verified University</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <main class="content-area">
+            <header>
+                <h1 id="page-title">Privacy-Preserving Analysis</h1>
+                <div class="connection-status">
+                    <span class="status-dot online"></span> Secure Network Active
+                </div>
+            </header>
+
+            <!-- SECTION 1: DATA ANALYSIS (SMPC) -->
+            <section id="section-analysis" class="tab-section active">
+                <div class="grid-layout">
+                    <!-- Data Owner A -->
+                    <div class="card data-owner">
+                        <div class="card-header">
+                            <ion-icon name="school-outline"></ion-icon>
+                            <h3>Metro State University</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="input-group">
+                                <label>Total Students</label>
+                                <input type="number" id="a-total" placeholder="0">
+                            </div>
+                            <div class="input-group">
+                                <label>Passed Students</label>
+                                <input type="number" id="a-passed" placeholder="0">
+                            </div>
+                            <button class="btn btn-primary" id="btn-submit-a">
+                                <ion-icon name="lock-closed-outline"></ion-icon> Encrypt & Submit
+                            </button>
+                            <div class="status-indicator hidden" id="status-a">
+                                <ion-icon name="checkmark-circle"></ion-icon> Data Masked & Sent
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Data Owner B -->
+                    <div class="card data-owner">
+                        <div class="card-header">
+                            <ion-icon name="school-outline"></ion-icon>
+                            <h3>Grand Valley Tech</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="input-group">
+                                <label>Total Students</label>
+                                <input type="number" id="b-total" placeholder="0">
+                            </div>
+                            <div class="input-group">
+                                <label>Passed Students</label>
+                                <input type="number" id="b-passed" placeholder="0">
+                            </div>
+                            <button class="btn btn-primary" id="btn-submit-b">
+                                <ion-icon name="lock-closed-outline"></ion-icon> Encrypt & Submit
+                            </button>
+                            <div class="status-indicator hidden" id="status-b">
+                                <ion-icon name="checkmark-circle"></ion-icon> Data Masked & Sent
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Compute Node -->
+                    <div class="card compute-node full-width">
+                        <div class="card-header">
+                            <ion-icon name="server-outline"></ion-icon>
+                            <h3>Secure Compute Node</h3>
+                        </div>
+                        <div class="card-body">
+                            <p class="info-text">Performs computation on masked data. Raw values are never exposed.</p>
+                            <div class="status-row">
+                                <span id="ready-a" class="status-pill">Metro State: Waiting...</span>
+                                <span id="ready-b" class="status-pill">Grand Valley: Waiting...</span>
+                            </div>
+                            <button class="btn btn-accent" id="btn-compute" disabled>
+                                <ion-icon name="calculator-outline"></ion-icon> Run Secure Computation
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Results -->
+                    <div class="card results-panel full-width hidden" id="analysis-results">
+                        <div class="card-header">
+                            <ion-icon name="stats-chart-outline"></ion-icon>
+                            <h3>Aggregated Public Results</h3>
+                        </div>
+                        <div class="result-grid">
+                            <div class="res-box">
+                                <span class="lbl">Total Students</span>
+                                <span class="val" id="res-total">--</span>
+                            </div>
+                            <div class="res-box">
+                                <span class="lbl">Passed Students</span>
+                                <span class="val" id="res-passed">--</span>
+                            </div>
+                            <div class="res-box highlight">
+                                <span class="lbl">Pass Percentage</span>
+                                <span class="val" id="res-percentage">--%</span>
+                            </div>
+                        </div>
+                        <p class="secure-note">
+                            <ion-icon name="shield"></ion-icon> Results are computed on masked data. Individual
+                            university inputs are never revealed.
+                        </p>
+                    </div>
+
+                    <!-- System Explanation -->
+                    <div class="card full-width explanation-card">
+                        <div class="card-header">
+                            <ion-icon name="bulb-outline"></ion-icon>
+                            <h3>How ZeroShare Works</h3>
+                        </div>
+                        <div class="card-body">
+                            <ul class="explanation-list">
+                                <li><span>1.</span> <b>Only verified universities</b> can access the platform.</li>
+                                <li><span>2.</span> <b>Data is encrypted/masked</b> before submission.</li>
+                                <li><span>3.</span> <b>Secure compute node</b> performs aggregation on protected data.
+                                </li>
+                                <li><span>4.</span> <b>Only final insights</b> are revealed.</li>
+                                <li><span>5.</span> <b>Documents are verified</b> using hashes, never stored.</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+
+            <!-- SECTION 2: DOCUMENT INTEGRITY (PDF HASHING) -->
+            <section id="section-integrity" class="tab-section">
+                <div class="card integrity-panel">
+                    <div class="card-header">
+                        <ion-icon name="document-text-outline"></ion-icon>
+                        <h3>PDF Document Integrity Verification</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert-box">
+                            <ion-icon name="shield-checkmark"></ion-icon>
+                            <p><b>Privacy First:</b> Documents are processed in-memory to generate a SHA-256 hash. Files
+                                are NEVER uploaded or stored.</p>
+                        </div>
+
+                        <div class="upload-zone" id="drop-zone">
+                            <input type="file" id="file-input" accept="application/pdf" hidden>
+                            <ion-icon name="cloud-upload-outline"></ion-icon>
+                            <p id="upload-text">Click to select a PDF or Drag & Drop here</p>
+                            <small>Only `.pdf` files accepted</small>
+                        </div>
+
+                        <div class="action-row">
+                            <button id="btn-generate-hash" class="btn btn-accent full-width" disabled>
+                                <ion-icon name="finger-print-outline"></ion-icon> Generate Integrity Hash
+                            </button>
+                        </div>
+
+                        <div id="file-result" class="file-result hidden">
+                            <div class="file-info">
+                                <ion-icon name="document"></ion-icon>
+                                <div class="details">
+                                    <span class="fname" id="file-name">document.pdf</span>
+                                    <span class="fsize" id="file-size">1.2 MB</span>
+                                </div>
+                            </div>
+
+                            <div class="hash-display">
+                                <label>SHA-256 Integrity Hash:</label>
+                                <code id="file-hash">Calculating...</code>
+                            </div>
+
+                            <div class="verification-status verified">
+                                <ion-icon name="trash-outline"></ion-icon>
+                                <span>PDF discarded after hash generation.</span>
+                            </div>
+
+                            <!-- Proof ID Generation Area (NEW) -->
+                            <div id="proof-area" class="proof-area hidden">
+                                <div class="separator-line"></div>
+                                <button id="btn-generate-proof" class="btn btn-primary full-width">
+                                    <ion-icon name="id-card-outline"></ion-icon> Generate Shareable Proof ID
+                                </button>
+
+                                <div id="proof-card" class="proof-card hidden">
+                                    <label>Secure Proof ID:</label>
+                                    <div class="proof-box">
+                                        <code id="proof-id-display">SC-UNI-....</code>
+                                        <button id="btn-copy-proof" class="btn-icon" title="Copy ID">
+                                            <ion-icon name="copy-outline"></ion-icon>
+                                        </button>
+                                    </div>
+                                    <small>Share this ID instead of the document.</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 4: VERIFY PROOF ID (NEW) -->
+            <section id="section-verify" class="tab-section">
+                <div class="card">
+                    <div class="card-header">
+                        <ion-icon name="checkmark-done-circle-outline"></ion-icon>
+                        <h3>Verify Proof ID</h3>
+                    </div>
+                    <div class="card-body">
+                        <p class="info-text">Verify a document's integrity using its unique Proof ID. No file upload
+                            required.</p>
+
+                        <div class="input-group">
+                            <label>Enter Proof ID</label>
+                            <input type="text" id="verify-input" placeholder="e.g. SC-UNI-2026-X9Y2">
+                        </div>
+
+                        <button id="btn-verify" class="btn btn-accent">
+                            <ion-icon name="search-outline"></ion-icon> Verify Status
+                        </button>
+
+                        <!-- Verification Result -->
+                        <div id="verify-result" class="verify-result hidden">
+                            <!-- Dynamic Content will be injected here -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 3: AUDIT LOG -->
+            <section id="section-audit" class="tab-section">
+                <div class="card">
+                    <div class="card-header">
+                        <ion-icon name="list-outline"></ion-icon>
+                        <h3>Immutable Audit Log (Blockchain Conceptual)</h3>
+                    </div>
+                    <div class="card-body">
+                        <table class="audit-table">
+                            <thead>
+                                <tr>
+                                    <th>Timestamp</th>
+                                    <th>Event Description</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="audit-list">
+                                <!-- Logs will appear here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <footer class="app-footer">
+                <p>&copy; 2026 ZeroShare Inc. | Secure Multi-Party Computation Platform | v2.1.0-stable</p>
+            </footer>
+
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
