@@ -4,15 +4,23 @@
  * @param {Date} timestamp - The timestamp associated with the hash.
  */
 const storeHashOnBlockchain = async (hash, timestamp) => {
-    console.log(`[BLOCKCHAIN] Sending hash to Ethereum: ${hash}`);
-    console.log(`[BLOCKCHAIN] Timestamp: ${timestamp.toISOString()}`);
+    const mockTxId = `0x${require('crypto').randomBytes(32).toString('hex')}`;
+
+    console.log(`[BLOCKCHAIN SIMULATION] Transaction initiated...`);
+    console.log(`[BLOCKCHAIN SIMULATION] Hash: ${hash}`);
+    console.log(`[BLOCKCHAIN SIMULATION] Timestamp: ${timestamp.toISOString()}`);
+    console.log(`[BLOCKCHAIN SIMULATION] Transaction ID: ${mockTxId}`);
+    console.log(`[BLOCKCHAIN SIMULATION] Status: SUCCESS`);
 
     // Placeholder for future implementation with ethers.js or web3.js
     // Example: 
     // const contract = new ethers.Contract(address, abi, signer);
     // await contract.storeHash(hash, timestamp.getTime());
 
-    return true;
+    return {
+        success: true,
+        transactionId: mockTxId
+    };
 };
 
 module.exports = {

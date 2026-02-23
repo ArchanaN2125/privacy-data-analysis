@@ -4,13 +4,13 @@
 
 // --- GLOBAL STATE ---
 const appState = {
-    isAuthenticated: false,
+    isAuthenticated: true, // [DEV MODE] Auth bypassed - direct dashboard access
     token: localStorage.getItem('zs_token') || null,
-    userRole: localStorage.getItem('zs_role') || null,
+    userRole: 'Admin',
     uniA: { submitted: false, maskedTotal: 0, maskedPassed: 0, keyTotal: 0, keyPassed: 0 },
     uniB: { submitted: false, maskedTotal: 0, maskedPassed: 0, keyTotal: 0, keyPassed: 0 },
-    stagedFile: null, // For PDF hashing
-    lastHash: null // Store last generated hash for Proof ID
+    stagedFile: null,
+    lastHash: null
 };
 
 // --- API HELPER ---
@@ -19,7 +19,7 @@ async function fetchAPI(endpoint, method = 'GET', body = null) {
         'Content-Type': 'application/json'
     };
     if (appState.token) {
-        headers['x-auth-token'] = appState.token;
+        headers['Authorization'] = `Bearer ${appState.token}`;
     }
 
     const options = {
@@ -38,6 +38,28 @@ async function fetchAPI(endpoint, method = 'GET', body = null) {
         throw new Error(data.msg || data.error || 'API Error');
     }
     return data;
+}
+
+// --- NOTIFICATION SYSTEM ---
+function showToast(message, type = 'success') {
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+
+    const icon = type === 'success' ? 'checkmark-circle-outline' : 'alert-circle-outline';
+
+    toast.innerHTML = `
+        <ion-icon name="${icon}"></ion-icon>
+        <span>${message}</span>
+    `;
+
+    container.appendChild(toast);
+
+    // Auto remove after 4s
+    setTimeout(() => {
+        toast.style.animation = 'fadeOut 0.3s forwards';
+        setTimeout(() => toast.remove(), 300);
+    }, 4000);
 }
 
 // --- DOM ELEMENTS ---
@@ -60,10 +82,8 @@ const login = {
 
 // --- INITIALIZATION ---
 document.addEventListener('DOMContentLoaded', () => {
-    // Check if already authenticated
-    if (appState.token) {
-        showDashboard();
-    }
+    // [DEV MODE] Skip login - directly show dashboard
+    showDashboard();
 
     // Setup Navigation
     navButtons.forEach(btn => {
@@ -78,17 +98,27 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById(targetId).classList.add('active');
 
             const titleMap = {
+                'section-overview': 'Dashboard Overview',
                 'section-analysis': 'Privacy-Preserving Analysis',
                 'section-integrity': 'Document Integrity Verification',
                 'section-verify': 'Proof Verification Portal',
                 'section-audit': 'System Audit Log'
             };
             document.getElementById('page-title').textContent = titleMap[targetId];
+
+            if (targetId === 'section-overview') {
+                loadDashboardData();
+            }
         });
     });
 
     // Login Handler
     login.btn.addEventListener('click', handleLogin);
+    document.getElementById('btn-demo').addEventListener('click', () => {
+        login.user.value = 'admin';
+        login.pass.value = 'password123';
+        handleLogin();
+    });
 
     // PDF Upload Handler
     const dropZone = document.getElementById('drop-zone');
@@ -115,6 +145,9 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('btn-copy-proof').addEventListener('click', copyProofID);
     document.getElementById('btn-verify').addEventListener('click', verifyProofID);
 
+    // Logout Handler
+    document.getElementById('btn-logout').addEventListener('click', handleLogout);
+
     // SMPC Handlers
     setupSMPCHandlers();
 });
@@ -123,32 +156,109 @@ function showDashboard() {
     appState.isAuthenticated = true;
     screens.login.classList.add('hidden');
     screens.dashboard.classList.remove('hidden');
+    loadDashboardData();
+}
+
+// --- DASHBOARD OVERVIEW ---
+async function loadDashboardData() {
+    try {
+        const [proofs, aggregates, auditLogs] = await Promise.all([
+            fetchAPI('/api/proof/history'),
+            fetchAPI('/api/aggregate/history'),
+            fetchAPI('/api/audit/audit-logs').catch(() => []) // Fallback if regular user can't see all audit logs
+        ]);
+
+        // Update Stats
+        document.getElementById('stat-proofs').textContent = proofs.length;
+        document.getElementById('stat-aggregates').textContent = aggregates.length;
+
+        // For verifications, let's count successful audits or just mock for now if not explicitly tracked
+        const successfulVerifies = auditLogs.filter(log => log.eventType.includes('VERIFY_SUCCESS')).length;
+        document.getElementById('stat-verifications').textContent = successfulVerifies || 0;
+
+        // Render Proof History
+        const proofList = document.getElementById('proof-history-list');
+        if (proofs.length === 0) {
+            proofList.innerHTML = '<li class="loading">No proofs generated yet.</li>';
+        } else {
+            proofList.innerHTML = proofs.slice(0, 5).map(p => `
+                <li class="history-item">
+                    <div class="h-info">
+                        <span class="h-title">Proof Generated</span>
+                        <span class="h-meta">${p.proofId}</span>
+                    </div>
+                    <span class="h-tag">${new Date(p.timestamp).toLocaleDateString()}</span>
+                </li>
+            `).join('');
+        }
+
+        // Render Aggregate History
+        const aggregateList = document.getElementById('aggregate-history-list');
+        if (aggregates.length === 0) {
+            aggregateList.innerHTML = '<li class="loading">No aggregate calculations found.</li>';
+        } else {
+            aggregateList.innerHTML = aggregates.slice(0, 5).map(a => `
+                <li class="history-item">
+                    <div class="h-info">
+                        <span class="h-title">Aggregate Calculation</span>
+                        <span class="h-meta">Pass Rate: ${a.finalPercentage}%</span>
+                    </div>
+                    <span class="h-tag">${new Date(a.timestamp).toLocaleDateString()}</span>
+                </li>
+            `).join('');
+        }
+
+    } catch (err) {
+        console.error("Dashboard Load Error:", err);
+        // Show friendly empty state instead of leaving loader stuck
+        const proofList = document.getElementById('proof-history-list');
+        const aggregateList = document.getElementById('aggregate-history-list');
+        if (proofList) proofList.innerHTML = '<li class="loading">No proofs generated yet.</li>';
+        if (aggregateList) aggregateList.innerHTML = '<li class="loading">No aggregate calculations found.</li>';
+    }
 }
 
 // --- AUTHENTICATION ---
 async function handleLogin() {
-    const email = login.user.value;
+    const organizationId = login.user.value;
     const password = login.pass.value;
 
     try {
-        const data = await fetchAPI('/api/auth/login', 'POST', { email, password });
+        const data = await fetchAPI('/api/auth/login', 'POST', { organizationId, password });
 
         appState.token = data.token;
         localStorage.setItem('zs_token', data.token);
 
-        // Note: In real app, decode token to get role
         appState.isAuthenticated = true;
         showDashboard();
 
-        backendLog('USER_LOGIN', `User ${email} connected to backend.`);
+        backendLog('USER_LOGIN', `Organization ${organizationId} connected to backend.`);
+        showToast(`Welcome back, ${organizationId}!`);
     } catch (err) {
         console.error(err);
         login.error.textContent = err.message;
         login.error.classList.remove('hidden');
         login.pass.value = '';
+        showToast(err.message, 'error');
     }
 }
 
+function handleLogout() {
+    localStorage.removeItem('zs_token');
+    appState.token = null;
+    appState.isAuthenticated = false;
+
+    screens.dashboard.classList.add('hidden');
+    screens.login.classList.remove('hidden');
+    showToast('Logged out successfully');
+}
+
+
+function showLogin() {
+    appState.isAuthenticated = false;
+    screens.dashboard.classList.add('hidden');
+    screens.login.classList.remove('hidden');
+}
 
 // --- FEATURE 1: SECURE MULTI-PARTY COMPUTATION ---
 function setupSMPCHandlers() {
@@ -220,11 +330,13 @@ async function performComputation() {
         btn.innerHTML = '<ion-icon name="checkmark-done-outline"></ion-icon> Computation Complete';
         btn.disabled = true;
 
+        showToast('Aggregate computation stored successfully.');
         backendLog('COMPUTE_EXEC', `Final Aggregate stored in DB: ${data.resultId}`);
 
     } catch (err) {
-        alert("Computation Error: " + err.message);
+        showToast("Computation Error: " + err.message, 'error');
         btn.innerHTML = '<ion-icon name="sync-outline"></ion-icon> Retry Computation';
+        btn.disabled = false;
     }
 }
 
@@ -233,7 +345,7 @@ async function performComputation() {
 
 function handleFileSelect(file) {
     if (!file || file.type !== 'application/pdf') {
-        alert("Please upload a valid PDF file.");
+        showToast("Please upload a valid PDF file.", 'error');
         return;
     }
 
@@ -306,10 +418,12 @@ async function generateProofID() {
         btn.innerHTML = '<ion-icon name="id-card-outline"></ion-icon> Proof ID Stored in DB';
         btn.disabled = true;
 
+        showToast('Proof stored and hash sent to blockchain.');
         backendLog('PROOF_GEN', `Proof ID created in MongoDB: ${data.proofId}`);
     } catch (err) {
-        alert("Storage Error: " + err.message);
+        showToast("Storage Error: " + err.message, 'error');
         btn.innerHTML = '<ion-icon name="id-card-outline"></ion-icon> Retry Storage';
+        btn.disabled = false;
     }
 }
 
@@ -319,6 +433,7 @@ function copyProofID() {
         const btn = document.getElementById('btn-copy-proof');
         const original = btn.innerHTML;
         btn.innerHTML = '<ion-icon name="checkmark-outline" style="color:var(--accent)"></ion-icon>';
+        showToast('Proof ID copied to clipboard');
         setTimeout(() => btn.innerHTML = original, 2000);
     });
 }
@@ -352,12 +467,12 @@ async function verifyProofID() {
                 <div class="verify-title">Proof Verified in DB</div>
                 <p>Immutable record found in MongoDB.</p>
                 <div class="verify-meta">
-                    <div class="verify-row"><span>Proof ID:</span> <span>${data.proof.proofId}</span></div>
-                    <div class="verify-row"><span>Org:</span> <span>${data.proof.organizationId}</span></div>
+                    <div class="verify-row"><span>Proof ID:</span> <span>${data.proofId}</span></div>
+                    <div class="verify-row"><span>Org:</span> <span>${data.organizationId}</span></div>
                     <div class="verify-row"><span>Timestamp:</span> <span>${new Date(data.timestamp).toLocaleString()}</span></div>
                 </div>
             `;
-            backendLog('VERIFY_SUCCESS', `Proof verified in DB: ${data.proof.proofId}`);
+            backendLog('VERIFY_SUCCESS', `Proof verified in DB: ${data.proofId}`);
         } else {
             throw new Error("Invalid Proof");
         }

@@ -26,18 +26,24 @@
             <p>Authorized Personnel Only. All activities are audited.</p>
 
             <div class="input-group">
-                <label>University ID</label>
-                <input type="text" id="login-user" placeholder="Enter Admin ID" value="admin">
+                <label>Organization ID</label>
+                <input type="text" id="login-user" placeholder="Enter Organization ID">
             </div>
             <div class="input-group">
-                <label>Access Key</label>
-                <input type="password" id="login-pass" placeholder="Enter Secure Passphrase">
+                <label>Secure Key</label>
+                <input type="password" id="login-pass" placeholder="Enter Access Key">
             </div>
 
             <button id="btn-login" class="btn btn-primary">
                 <ion-icon name="log-in-outline"></ion-icon> Verify Credentials
             </button>
-            <p class="login-hint" style="display:none">Configuration: <b>standard</b> / <b>secure</b></p>
+            <button id="btn-demo" class="btn btn-accent" style="margin-top: 0.5rem; width: 100%;">
+                <ion-icon name="flask-outline"></ion-icon> Demo Access (Auto-fill)
+            </button>
+            <p class="login-hint" style="display:block; text-align: center; margin-top: 1rem;">
+                <b>Reviewer Credentials:</b><br>
+                ID: <code>admin</code> | Key: <code>password123</code>
+            </p>
             <div id="login-error" class="error-msg hidden">Access Denied. Invalid Credentials.</div>
         </div>
     </div>
@@ -52,7 +58,10 @@
             </div>
 
             <nav>
-                <button class="nav-btn active" data-target="section-analysis">
+                <button class="nav-btn active" data-target="section-overview">
+                    <ion-icon name="grid-outline"></ion-icon> Dashboard Overview
+                </button>
+                <button class="nav-btn" data-target="section-analysis">
                     <ion-icon name="analytics-outline"></ion-icon> Data Analysis
                 </button>
                 <button class="nav-btn" data-target="section-integrity">
@@ -62,7 +71,11 @@
                     <ion-icon name="checkmark-done-circle-outline"></ion-icon> Verify Proof
                 </button>
                 <button class="nav-btn" data-target="section-audit">
-                    <ion-icon name="list-outline"></ion-icon> Audit Log
+                    <ion-icon name="list-outline"></ion-icon> System Audit
+                </button>
+                <div class="sidebar-spacer" style="flex: 1;"></div>
+                <button id="btn-logout" class="nav-btn logout-btn">
+                    <ion-icon name="log-out-outline"></ion-icon> Logout
                 </button>
             </nav>
 
@@ -78,14 +91,63 @@
         <!-- MAIN CONTENT -->
         <main class="content-area">
             <header>
-                <h1 id="page-title">Privacy-Preserving Analysis</h1>
+                <h1 id="page-title">Dashboard Overview</h1>
                 <div class="connection-status">
                     <span class="status-dot online"></span> Secure Network Active
                 </div>
             </header>
 
+            <!-- SECTION 0: OVERVIEW -->
+            <section id="section-overview" class="tab-section active">
+                <div class="stats-overview-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon"><ion-icon name="document-text-outline"></ion-icon></div>
+                        <div class="stat-val" id="stat-proofs">0</div>
+                        <div class="stat-lbl">Proofs Generated</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon"><ion-icon name="shield-checkmark-outline"></ion-icon></div>
+                        <div class="stat-val" id="stat-verifications">0</div>
+                        <div class="stat-lbl">Successful Verifications</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon"><ion-icon name="calculator-outline"></ion-icon></div>
+                        <div class="stat-val" id="stat-aggregates">0</div>
+                        <div class="stat-lbl">Aggregate Calculations</div>
+                    </div>
+                </div>
+
+                <div class="grid-layout" style="margin-top: 2rem;">
+                    <!-- Recent Proofs -->
+                    <div class="card history-card">
+                        <div class="card-header">
+                            <ion-icon name="time-outline"></ion-icon>
+                            <h3>Recent Discovery Proofs</h3>
+                        </div>
+                        <div class="card-body">
+                            <ul class="history-list" id="proof-history-list">
+                                <li class="loading">Fetching records...</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Recent Aggregates -->
+                    <div class="card history-card">
+                        <div class="card-header">
+                            <ion-icon name="stats-chart-outline"></ion-icon>
+                            <h3>Recent Aggregate Insights</h3>
+                        </div>
+                        <div class="card-body">
+                            <ul class="history-list" id="aggregate-history-list">
+                                <li class="loading">Loading insights...</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
             <!-- SECTION 1: DATA ANALYSIS (SMPC) -->
-            <section id="section-analysis" class="tab-section active">
+            <section id="section-analysis" class="tab-section">
                 <div class="grid-layout">
                     <!-- Data Owner A -->
                     <div class="card data-owner">
@@ -328,6 +390,7 @@
         </main>
     </div>
 
+    <div id="toast-container" class="toast-container"></div>
     <script src="script.js"></script>
 </body>
 

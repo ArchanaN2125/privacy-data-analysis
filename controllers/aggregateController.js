@@ -6,46 +6,50 @@ const { v4: uuidv4 } = require('uuid');
  * @desc    Compute final percentage and store result
  * @access  Private
  */
-const computeAggregate = async (req, res) => {
+const computeAggregate = async (req, res, next) => {
     const { totalStudents, passedStudents } = req.body;
 
-    // Input validation
-    if (totalStudents === undefined || passedStudents === undefined) {
-        return res.status(400).json({ error: 'totalStudents and passedStudents are required' });
-    }
-
-    if (typeof totalStudents !== 'number' || typeof passedStudents !== 'number' || totalStudents <= 0) {
-        return res.status(400).json({ error: 'Invalid input values. totalStudents must be greater than 0.' });
-    }
-
+    // Computation: (passedStudents / totalStudents) * 100
     try {
-        // 1. Compute final percentage
-        const finalPercentage = (passedStudents / totalStudents) * 100;
-
-        // 2. Prepare data for storage (Discarding raw totalStudents and passedStudents)
-        const resultId = uuidv4();
+        const finalPercentage = parseFloat(((passedStudents / totalStudents) * 100).toFixed(2));
         const timestamp = new Date();
 
         const newResult = new AggregatedResult({
-            resultId,
             finalPercentage,
             timestamp
         });
 
-        // 3. Store only the final percentage and timestamp
+        // Store ONLY finalPercentage and timestamp
         await newResult.save();
 
         res.status(201).json({
+            success: true,
             message: 'Aggregate result computed and stored successfully',
-            resultId,
-            finalPercentage: finalPercentage.toFixed(2)
+            finalPercentage
         });
+
+        // Raw inputs (totalStudents, passedStudents) are naturally discarded 
+        // as they are local variables and not stored anywhere.
     } catch (err) {
-        console.error('Error computing aggregate:', err.message);
-        res.status(500).json({ error: 'Server error' });
+        next(err);
+    }
+};
+
+/**
+ * @route   GET /api/aggregate/history
+ * @desc    Get aggregate history
+ * @access  Private
+ */
+const getAggregateHistory = async (req, res, next) => {
+    try {
+        const results = await AggregatedResult.find().sort({ timestamp: -1 });
+        res.json(results);
+    } catch (err) {
+        next(err);
     }
 };
 
 module.exports = {
-    computeAggregate
+    computeAggregate,
+    getAggregateHistory
 };

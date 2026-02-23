@@ -9,6 +9,10 @@ const auditLogSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    organizationId: {
+        type: String,
+        required: true
+    },
     timestamp: {
         type: Date,
         default: Date.now

@@ -7,57 +7,53 @@ const { storeHashOnBlockchain } = require('../services/blockchainService');
  * @desc    Create a new proof
  * @access  Private (should be protected by auth middleware)
  */
-const createProof = async (req, res) => {
+const createProof = async (req, res, next) => {
     const { hash, organizationId } = req.body;
-
-    // Basic validation
-    if (!hash || !organizationId) {
-        return res.status(400).json({ error: 'Hash and organizationId are required' });
-    }
 
     try {
         const proofId = uuidv4();
+        // Use authenticated user's ID as organizationId for security
+        const orgId = organizationId || (req.user && req.user.id);
+
         const newProof = new Proof({
             proofId,
             hash,
-            organizationId
+            organizationId: orgId
         });
 
         await newProof.save();
 
-        // Store hash on blockchain (placeholder)
-        await storeHashOnBlockchain(hash, newProof.timestamp);
+        // Simulation: Call blockchain service
+        const blockchainResult = await storeHashOnBlockchain(hash, newProof.timestamp);
 
-        res.status(201).json({ proofId });
+        res.status(201).json({
+            success: true,
+            proofId,
+            timestamp: newProof.timestamp,
+            blockchain: blockchainResult
+        });
     } catch (err) {
-        console.error('Error creating proof:', err.message);
-        res.status(500).json({ error: 'Server error' });
+        next(err);
     }
 };
 
 /**
  * @route   POST /api/proof/verify-proof
  * @desc    Verify a proof by hash
- * @access  Private (should be protected by auth middleware)
+ * @access  Private
  */
-const verifyProof = async (req, res) => {
+const verifyProof = async (req, res, next) => {
     const { hash } = req.body;
 
-    // Basic validation
-    if (!hash) {
-        return res.status(400).json({ error: 'Hash is required for verification' });
-    }
-
     try {
-        // Search by either hash or proofId
         const proof = await Proof.findOne({
-            $or: [{ hash: hash }, { proofId: hash }]
+            $or: [{ hash }, { proofId: hash }]
         });
 
         if (!proof) {
             return res.status(200).json({
                 status: 'INVALID',
-                message: 'No proof found for the provided identifier'
+                message: 'No record found for this identifier.'
             });
         }
 
@@ -68,12 +64,28 @@ const verifyProof = async (req, res) => {
             organizationId: proof.organizationId
         });
     } catch (err) {
-        console.error('Error verifying proof:', err.message);
-        res.status(500).json({ error: 'Server error' });
+        next(err);
+    }
+};
+
+/**
+     * @route   GET /api/proof/history
+     * @desc    Get proof history for organization
+     * @access  Private
+     */
+const getProofHistory = async (req, res, next) => {
+    try {
+        // [DEVELOPMENT MODE] Return all proofs if req.user is missing
+        const query = req.user ? { organizationId: req.user.id } : {};
+        const proofs = await Proof.find(query).sort({ timestamp: -1 });
+        res.json(proofs);
+    } catch (err) {
+        next(err);
     }
 };
 
 module.exports = {
     createProof,
-    verifyProof
+    verifyProof,
+    getProofHistory
 };

@@ -20,4 +20,7 @@ const proofSchema = new mongoose.Schema({
     }
 }, { timestamps: true });
 
+// Index for fast lookups
+proofSchema.index({ hash: 1 });
+
 module.exports = mongoose.model('Proof', proofSchema);

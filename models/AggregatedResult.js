@@ -1,18 +1,14 @@
 const mongoose = require('mongoose');
 
 const aggregatedResultSchema = new mongoose.Schema({
-    resultId: {
-        type: String,
-        required: true
-    },
     finalPercentage: {
         type: Number,
         required: true
     },
     timestamp: {
         type: Date,
-        required: true
+        default: Date.now
     }
-}, { timestamps: true });
+}, { timestamps: false }); // Disable timestamps if not needed, or keep for metadata
 
 module.exports = mongoose.model('AggregatedResult', aggregatedResultSchema);

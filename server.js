@@ -4,7 +4,8 @@ const helmet = require('helmet');
 const cors = require('cors');
 const connectDB = require('./config/db');
 const { connectRedis } = require('./config/redis');
-const limiter = require('./middleware/rateLimiter');
+const { generalLimiter } = require('./middleware/rateLimiter');
+const errorHandler = require('./middleware/errorMiddleware');
 const authRoutes = require('./routes/authRoutes');
 const proofRoutes = require('./routes/proofRoutes');
 const auditRoutes = require('./routes/auditRoutes');
@@ -22,18 +23,21 @@ connectRedis();
 const app = express();
 
 // Security Middlewares
-app.use(helmet());
+app.use(helmet({
+    contentSecurityPolicy: process.env.NODE_ENV === 'production' ? undefined : false,
+}));
 app.use(cors({
-    origin: process.env.ALLOWED_ORIGINS || '*',
+    origin: process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : '*',
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     allowedHeaders: ['Content-Type', 'x-auth-token']
 }));
-app.use(limiter);
+// Apply rate limiting ONLY to API routes (not static files)
 
 // Body Parser Middleware
 app.use(express.json());
 
-// Routes
+// Routes (rate limiter applied to API only)
+app.use('/api', generalLimiter);
 app.use('/api/auth', authRoutes);
 app.use('/api/proof', proofRoutes);
 app.use('/api/audit', auditRoutes);
@@ -48,6 +52,9 @@ app.use(express.static(path.join(__dirname, './')));
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
+
+// Centralized Error Handling (MUST be last)
+app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
 
