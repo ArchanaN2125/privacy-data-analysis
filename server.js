@@ -18,7 +18,7 @@ dotenv.config();
 connectDB();
 
 // Connect to Redis
-connectRedis();
+// connectRedis();
 
 const app = express();
 
@@ -60,4 +60,12 @@ const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
     console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
+});
+
+process.on('uncaughtException', (err) => {
+    console.error('UNCAUGHT EXCEPTION! Shutting down...', err);
+});
+
+process.on('unhandledRejection', (err) => {
+    console.error('UNHANDLED REJECTION! Shutting down...', err);
 });

@@ -33,16 +33,26 @@
                 <label>Secure Key</label>
                 <input type="password" id="login-pass" placeholder="Enter Access Key">
             </div>
+            <div class="input-group">
+                <label>Access Role</label>
+                <select id="login-role" class="role-select">
+                    <option value="Head">👑 Head (Full Vault Access)</option>
+                    <option value="Admin">🛡️ Admin (Restricted)</option>
+                    <option value="Staff">📋 Staff (Restricted)</option>
+                    <option value="IT">🔧 IT (Restricted)</option>
+                </select>
+            </div>
 
             <button id="btn-login" class="btn btn-primary">
                 <ion-icon name="log-in-outline"></ion-icon> Verify Credentials
             </button>
             <button id="btn-demo" class="btn btn-accent" style="margin-top: 0.5rem; width: 100%;">
-                <ion-icon name="flask-outline"></ion-icon> Demo Access (Auto-fill)
+                <ion-icon name="flask-outline"></ion-icon> Demo as Head (Auto-fill)
             </button>
             <p class="login-hint" style="display:block; text-align: center; margin-top: 1rem;">
                 <b>Reviewer Credentials:</b><br>
-                ID: <code>admin</code> | Key: <code>password123</code>
+                ID: <code>admin</code> | Key: <code>password123</code><br>
+                Vault PIN: <code>head-2026</code> (Head role only)
             </p>
             <div id="login-error" class="error-msg hidden">Access Denied. Invalid Credentials.</div>
         </div>
@@ -62,7 +72,7 @@
                     <ion-icon name="grid-outline"></ion-icon> Dashboard Overview
                 </button>
                 <button class="nav-btn" data-target="section-analysis">
-                    <ion-icon name="analytics-outline"></ion-icon> Data Analysis
+                    <ion-icon name="lock-closed-outline"></ion-icon> Secure Data Vault
                 </button>
                 <button class="nav-btn" data-target="section-integrity">
                     <ion-icon name="document-lock-outline"></ion-icon> Document Integrity
